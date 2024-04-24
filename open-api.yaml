@@ -3806,7 +3806,7 @@ paths:
       operationId: indexes.settings.searchCutoffMs.reset
       summary: Reset search cutoff
       description: |
-        Reset the [search cutoff](https://docs.meilisearch.com/reference/features/settings.html#search-cutoff) field of an index to its default value (`null`).
+        Reset the [search cutoff](https://docs.meilisearch.com/reference/features/settings.html#search-cutoff) field of an index to its default value.
       tags:
         - Settings
       security:
