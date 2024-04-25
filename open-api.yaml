@@ -827,8 +827,8 @@ components:
     distinctAttribute:
       type: string
       description: Search returns documents with distinct (different) values of the given field.
-      default: 1500
-      nullable: false
+      default: null
+      nullable: true
     searchCutoffMs:
       type: integer
       description: Search interupts after the specified amount of time (in milliseconds).
