@@ -3749,7 +3749,7 @@ paths:
   '/indexes/{indexUid}/settings/search-cutoff':
     get:
       operationId: indexes.settings.searchCutoffMs.get
-      summary: Get distinct attribute
+      summary: Get search cutoff value in ms
       description: |
         Get the [search cutoff](https://docs.meilisearch.com/reference/features/settings.html#search-cutoff) field of an index.
       tags:
