@@ -809,11 +809,11 @@ components:
           default: 100
           nullable: false
         sortFacetValuesBy:
-          description: Defines how facet values are sorted. By default, all facets (`*`) are sorted by name, alphanumerically in ascending order (`alpha`). `count` sorts facet values by the number of documents containing a facet value in descending order.
+          description: Defines how facet values are sorted. By default, all facets (`*`) are sorted by name, alphanumerically in ascending order (`alpha`). `count` sorts facet values by the number of documents containing a facet value in descending order. This impacts the order of the results returned by the facet-search route as well.
           type: object
           example:
-            "*": 'alpha'
-            "genres": 'count'
+            "*": "alpha"
+            "genres": "count"
     filterableAttributes:
       type: array
       description: |
@@ -827,6 +827,11 @@ components:
     distinctAttribute:
       type: string
       description: Search returns documents with distinct (different) values of the given field.
+      default: null
+      nullable: true
+    searchCutoffMs:
+      type: integer
+      description: Search interupts after the specified amount of time (in milliseconds).
       nullable: true
     searchableAttributes:
       type: array
@@ -910,7 +915,7 @@ components:
       properties:
         q:
           type: string
-          description: Query string.
+          description: The query string. It supports phrase search and negative keywords.
           default: '""'
           example: '"Back to the future"'
         vector:
@@ -1319,7 +1324,7 @@ components:
     q:
       name: q
       in: query
-      description: Query string.
+      description: The query string. It supports phrase search and negative keywords.
       schema:
         type: string
         example: back to the future
@@ -2609,6 +2614,8 @@ paths:
                     $ref: '#/components/schemas/pagination'
                   faceting:
                     $ref: '#/components/schemas/faceting'
+                  searchCutoffMs:
+                    $ref: '#/components/schemas/searchCutoffMs'
                 required:
                   - rankingRules
                   - distinctAttribute
@@ -2727,6 +2734,8 @@ paths:
                   $ref: '#/components/schemas/pagination'
                 faceting:
                   $ref: '#/components/schemas/faceting'
+                  searchCutoffMs:
+                    $ref: '#/components/schemas/searchCutoffMs'
             examples:
               Example:
                 value:
@@ -3717,6 +3726,87 @@ paths:
       summary: Reset displayed attributes
       description: |
         Reset the [displayed attributes](https://docs.meilisearch.com/reference/features/settings.html#displayed-attributes) of an index to its default value (`['*']`).
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_settingsUpdate'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    parameters:
+      - $ref: '#/components/parameters/indexUid'
+  '/indexes/{indexUid}/settings/search-cutoff':
+    get:
+      operationId: indexes.settings.searchCutoffMs.get
+      summary: Get search cutoff value in ms
+      description: |
+        Get the [search cutoff](https://docs.meilisearch.com/reference/features/settings.html#search-cutoff) field of an index.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/searchCutoffMs'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    put:
+      operationId: indexes.settings.searchCutoffMs.update
+      summary: Update search cutoff
+      description: |
+        Update the [search cutoff](https://docs.meilisearch.com/reference/features/settings.html#search-cutoff) field of an index.
+
+        > info
+        > If the provided index does not exist, it will be created.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/searchCutoffMs'
+        description: ''
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_settingsUpdate'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/Content-Type'
+    delete:
+      operationId: indexes.settings.searchCutoffMs.reset
+      summary: Reset search cutoff
+      description: |
+        Reset the [search cutoff](https://docs.meilisearch.com/reference/features/settings.html#search-cutoff) field of an index to its default value.
       tags:
         - Settings
       security:
