@@ -614,7 +614,7 @@ components:
           $ref: '#/components/schemas/error'
         duration:
           type: string
-          description: Total elasped time the engine was in processing state expressed as a `ISO-8601` duration format. Default is set to `null`
+          description: Total elapsed time the engine was in processing state expressed as a `ISO-8601` duration format. Default is set to `null`
           nullable: true
         enqueuedAt:
           description: Represent the date and time as a `RFC 3339` format when the task has been enqueued
@@ -1122,7 +1122,7 @@ components:
               - experimental.update
         indexes:
           type: array
-          description: 'A list of accesible indexes permitted for the key. ["*"] for all indexes. The * character can be used as a wildcard when located at the last position. e.g. "products_*"" to allow access to all indexes whose names start with "products_".'
+          description: 'A list of accessible indexes permitted for the key. ["*"] for all indexes. The * character can be used as a wildcard when located at the last position. e.g. "products_*"" to allow access to all indexes whose names start with "products_".'
           items:
             type: string
             example: movies
