@@ -1,0 +1,14 @@
+name: Validate Open API file
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: openapi-validator-action
+      uses: thiyagu06/openapi-validator-action@v1
+      with:
+        filepath: 'open-api.yaml'
