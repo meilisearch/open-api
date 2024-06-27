@@ -974,6 +974,9 @@ components:
           type: boolean
           description: Defines whether a `_rankingScoreDetails` object containing information about the score of that document for each ranking rule should be returned or not.
           default: false
+        rankingScoreThreshold:
+          type: number
+          description: Excludes search results with a ranking score lower than the defined value.
         matchingStrategy:
           type: string
           description: Defines which strategy to use to match the query terms within the documents as search results. Two different strategies are available, `last` and `all`. By default, the `last` strategy is chosen.
