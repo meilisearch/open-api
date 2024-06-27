@@ -2025,7 +2025,9 @@ paths:
         > info
         > Use the reserved `_geo` object to add geo coordinates to a document. `_geo` is an object made of `lat` and `lng` field.
         >
-        > Use the reserved `_vectors` arrays of floats to add embeddings to a document. `_vectors` is an array of floats or multiple arrays of floats in an outer array.
+        > When the vectorStore feature is enabled you can use the reserved `_vectors` field in your documents.
+        > It can accept an array of floats, multiple arrays of floats in an outer array or an object.
+        > This object accepts keys corresponding to the different embedders defined your index settings.
       tags:
         - Documents
       security:
@@ -2081,7 +2083,9 @@ paths:
         > info
         > Use the reserved `_geo` object to add geo coordinates to a document. `_geo` is an object made of `lat` and `lng` field.
         >
-        > Use the reserved `_vectors` arrays of floats to add embeddings to a document. `_vectors` is an array of floats or multiple arrays of floats in an outer array.
+        > When the vectorStore feature is enabled you can use the reserved `_vectors` field in your documents.
+        > It can accept an array of floats, multiple arrays of floats in an outer array or an object.
+        > This object accepts keys corresponding to the different embedders defined your index settings.
       tags:
         - Documents
       security:
