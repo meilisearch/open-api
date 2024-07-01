@@ -983,8 +983,14 @@ components:
           default: 'last'
         attributesToSearchOn:
           type: array
+          in: query
           description: Defines which `searchableAttributes` the query will search on.
           default: '["*"]'
+        distinctAttribute:
+          type: string
+          in: query
+          description: Defines the distinct attribute at search time. If a distinct attribute is already defined in the settings it'll be ignored in favor of the one defined at search time.
+          default: null
         filter:
           $ref: '#/components/schemas/filter'
         facets:
@@ -1064,6 +1070,52 @@ components:
           value:
             facetName: genres
             facetQuery: Romance
+    similar:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          description: the document needing similar results.
+          example: '"12345"'
+        attributesToRetrieve:
+          type: array
+          description: 'Array of attributes whose fields will be present in the returned documents. Defaults to the [displayedAttributes list](https://docs.meilisearch.com/reference/features/settings.html#displayed-attributes) which contains by default all attributes found in the documents.'
+          items:
+            type: string
+            example: '["title", "overview"]'
+            default: '["*"]'
+        showRankingScore:
+          type: boolean
+          description: Defines whether a `_rankingScore` number representing the relevancy score of that document should be returned or not.
+          default: false
+        showRankingScoreDetails:
+          type: boolean
+          description: Defines whether a `_rankingScoreDetails` object containing information about the score of that document for each ranking rule should be returned or not.
+          default: false
+        rankingScoreThreshold:
+          type: number
+          description: Excludes similar results with a ranking score lower than the defined value.
+        filter:
+          $ref: '#/components/schemas/filter'
+        offset:
+          type: number
+          description: Number of documents to skip.
+          default: 0
+        limit:
+          type: number
+          description: Maximum number of documents returned.
+          default: 20
+      examples:
+        Example:
+          value:
+            id: "12345"
+            offset: 0
+            limit: 20
+            filter: (genres = Horror AND genres = Mystery) OR release_date > 523242000
+            attributesToRetrieve:
+              - title
+              - overview
     error:
       title: error
       type: object
@@ -1194,6 +1246,13 @@ components:
     documentId:
       name: documentId
       in: path
+      description: The document identifier
+      required: true
+      schema:
+        type: any
+    id:
+      name: id
+      in: query
       description: The document identifier
       required: true
       schema:
@@ -1394,6 +1453,49 @@ components:
         example: 5
         default: 10
       description: Sets the total number of words to keep around the matched part of an attribute specified in the `attributesToCrop` parameter.
+    distinctAttribute:
+      name: distinctAttribute
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "color"
+      description: Defines the distinct attribute to use, at search time. If a distinct attribute is already defined in the settings it'll be ignored in favor of the one defined at search time.
+    embedder:
+      name: embedder
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "OpenAi"
+        default: "default"
+      description: The embedder name defined in the settings.
+    showRankingScore:
+      name: showRankingScore
+      in: query
+      required: false
+      schema:
+        type: boolean
+        example: true
+        default: false
+      description: Wether to display the ranking scores associated with the hits.
+    showRankingScoreDetails:
+      name: showRankingScoreDetails
+      in: query
+      required: false
+      schema:
+        type: boolean
+        example: true
+        default: false
+      description: Wether to display the ranking scores details associated with the hits.
+    rankingScoreThreshold:
+      name: rankingScoreThreshold
+      in: query
+      required: false
+      schema:
+        type: number
+        example: 0.8
+      description: Excludes search results with a ranking score lower than the defined number.
     facets:
       name: facets
       in: query
@@ -1418,8 +1520,9 @@ components:
         enum:
           - last
           - all
+          - frequency
         default: 'last'
-      description: Defines which strategy to use to match the query terms within the documents as search results. Two different strategies are available, `last` and `all`. By default, the `last` strategy is chosen.
+      description: Defines which strategy to use to match the query terms within the documents as search results. Two different strategies are available, `last`, `all`, and `frequency`. By default, the `last` strategy is chosen.
     sort:
       name: sort
       in: query
@@ -2416,6 +2519,7 @@ paths:
         - $ref: '#/components/parameters/hitsPerPage'
         - $ref: '#/components/parameters/showMatchesPosition'
         - $ref: '#/components/parameters/matchingStrategy'
+        - $ref: '#/components/parameters/distinctAttribute'
       responses:
         '200':
           description: Ok
@@ -2570,6 +2674,149 @@ paths:
                       - value: Romantic
                         count: 3
                     facetQuery: Rom
+                    processingTimeMs: 0
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/Content-Type'
+    parameters:
+      - $ref: '#/components/parameters/indexUid'
+  '/indexes/{indexUid}/similar':
+    get:
+      operationId: indexes.documents.similar
+      summary: Similar
+      description: |
+        Search for documents related to the specified document id.
+
+        This route should only be used when no API key is required. If an API key is required, use the POST route instead.
+      tags:
+        - Similar
+      security:
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/attributesToRetrieve'
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/embedder'
+        - $ref: '#/components/parameters/showRankingScore'
+        - $ref: '#/components/parameters/showRankingScoreDetails'
+        - $ref: '#/components/parameters/rankingScoreThreshold'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/searchResponse'
+              examples:
+                Example:
+                  value:
+                    hits:
+                      - id: 25684
+                        title: American Ninja 5
+                        poster: 'https://image.tmdb.org/t/p/w1280/iuAQVI4mvjI83wnirpD8GVNRVuY.jpg'
+                        overview: 'When a scientists daughter is kidnapped, American Ninja, attempts to find her, but this time he teams up with a youngster he has trained in the ways of the ninja.'
+                        release_date: 725846400
+                        _formatted:
+                          id: 25684
+                          title: American Ninja 5
+                          poster: 'https://image.tmdb.org/t/p/w1280/iuAQVI4mvjI83wnirpD8GVNRVuY.jpg'
+                          overview: 'When a scientists daughter is kidnapped, American <em>Ninja</em>, attempts to find her, but this time he teams up with a youngster he has trained in the ways of the <em>ninja</em>.'
+                          release_date: 725846400
+                        _matchesPosition:
+                          overview:
+                            - start: 49
+                              length: 5
+                            - start: 155
+                              length: 5
+                    facetDistribution:
+                      genres:
+                        action: 273
+                        animation: 118
+                        adventure: 132
+                        fantasy: 67
+                        comedy: 475
+                        mystery: 70
+                        thriller: 217
+                    facetStats:
+                      price:
+                        min: 1
+                        max: 4999.99
+                    limit: 0
+                    offset: 0
+                    estimatedTotalHits: 0
+                    query: string
+                    processingTimeMs: 0
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    post:
+      operationId: indexes.documents.similar
+      summary: Similar
+      description: |
+        Search for documents related to the specified document id.
+
+        This is the preferred route to perform search when an API key is required, as it allows for [preflight requests](https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request) to be cached. Caching preflight requests improves considerably the speed of the search.
+      tags:
+        - Similar
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/searchQuery'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/searchResponse'
+              examples:
+                Example:
+                  value:
+                    hits:
+                      - id: 25684
+                        title: American Ninja 5
+                        poster: 'https://image.tmdb.org/t/p/w1280/iuAQVI4mvjI83wnirpD8GVNRVuY.jpg'
+                        overview: 'When a scientists daughter is kidnapped, American Ninja, attempts to find her, but this time he teams up with a youngster he has trained in the ways of the ninja.'
+                        release_date: 725846400
+                        _formatted:
+                          id: 25684
+                          title: American Ninja 5
+                          poster: 'https://image.tmdb.org/t/p/w1280/iuAQVI4mvjI83wnirpD8GVNRVuY.jpg'
+                          overview: 'When a scientists daughter is kidnapped, American <em>Ninja</em>, attempts to find her, but this time he teams up with a youngster he has trained in the ways of the <em>ninja</em>.'
+                          release_date: 725846400
+                        _matchesPosition:
+                          overview:
+                            - start: 49
+                              length: 5
+                            - start: 155
+                              length: 5
+                    facetDistribution:
+                      genres:
+                        action: 273
+                        animation: 118
+                        adventure: 132
+                        fantasy: 67
+                        comedy: 475
+                        mystery: 70
+                        thriller: 217
+                    facetStats:
+                      price:
+                        min: 1
+                        max: 4999.99
+                    limit: 0
+                    offset: 0
+                    estimatedTotalHits: 0
+                    query: string
                     processingTimeMs: 0
         '401':
           $ref: '#/components/responses/401'
