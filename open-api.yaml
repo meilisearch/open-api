@@ -2359,14 +2359,14 @@ paths:
         '413':
           $ref: '#/components/responses/413'
       parameters:
-        name: Content-Type
-        in: header
-        required: true
-        schema:
-          type: string
-          enum:
-            - application/json
-        description: Payload content-type
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - application/json
+          description: Payload content-type
   '/indexes/{indexUid}/documents/fetch':
     post:
       operationId: indexes.documents.fetch
