@@ -622,6 +622,12 @@ components:
             originalFilter:
               type: string
               description: Original filter query for taskCancelation or taskDeletion tasks.
+            context:
+              type: object
+              description: The variables used to run this query
+            function:
+              type: string
+              description: The string used to edit the documents
         error:
           description: Error object containing error details and context when a task has a failed status.
           $ref: '#/components/schemas/error'
@@ -1699,6 +1705,14 @@ components:
         status: enqueued
         type: documentAdditionOrUpdate
         enqueuedAt: '2021-01-01T09:39:00.000000Z'
+    202_editDocumentsByFunction:
+      summary: 202 Accepted editDocumentsByFunction response example
+      value:
+        taskUid: 0
+        indexUid: movies
+        status: enqueued
+        type: documentEdition
+        enqueuedAt: '2021-01-01T09:39:00.000000Z'
     202_documentDeletion:
       summary: 202 Accepted documentDeletion response example
       value:
@@ -2302,6 +2316,57 @@ paths:
           description: Not Found
     parameters:
       - $ref: '#/components/parameters/indexUid'
+  '/indexes/{indexUid}/documents/edit':
+    patch:
+      operationId: indexes.documents.edit
+      summary: (EXPERIMENTAL FEATURE) Edit documents by function
+      description: |
+        You can edit documents by executing a Rhai function on all the documents of your database or a subset of them that you can select by a Meilisearch filter.
+        See https://github.com/orgs/meilisearch/discussions/762
+      tags:
+        - Documents
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: string
+                  description: Select the documents you wants to apply the function on.
+                function:
+                  type: string
+                  description: The rhai function you want to apply to your documents.
+                context:
+                  type: object
+                  description: The variable you want to use in your function
+            examples: {}
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_editDocumentsByFunction'
+        '401':
+          $ref: '#/components/responses/401'
+        '413':
+          $ref: '#/components/responses/413'
+      parameters:
+        name: Content-Type
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+            - application/json
+        description: Payload content-type
   '/indexes/{indexUid}/documents/fetch':
     post:
       operationId: indexes.documents.fetch
