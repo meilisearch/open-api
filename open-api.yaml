@@ -2343,7 +2343,11 @@ paths:
                 context:
                   type: object
                   description: The variable you want to use in your function
-            examples: {}
+            examples:
+              Example:
+                value:
+                  filter: "_geo NOT EXISTS"
+                  function: "doc = ()"
       responses:
         '202':
           description: Accepted
