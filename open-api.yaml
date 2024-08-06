@@ -3095,6 +3095,8 @@ paths:
                   $ref: '#/components/schemas/filterableAttributes'
                 sortableAttributes:
                   $ref: '#/components/schemas/sortableAttributes'
+                localizedAttributes:
+                  $ref: '#/components/schemas/localizedAttributes'
                 typoTolerance:
                   $ref: '#/components/schemas/typoTolerance'
                 pagination:
@@ -3523,6 +3525,88 @@ paths:
         ```
 
         To remove all ranking rules, which is not recommended in any case, you would send an empty array to the add or replace ranking rules route.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_settingsUpdate'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    parameters:
+      - $ref: '#/components/parameters/indexUid'
+  '/indexes/{indexUid}/settings/localized-attributes':
+    get:
+      operationId: indexes.settings.localizedAttributes.get
+      summary: Get the localized attributes configuration
+      description: |
+        Get the localized attributes configuration of an index.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/localizedAttributes'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    patch:
+      operationId: indexes.settings.localizedAttributes.update
+      summary: Update localized attributes settings
+      description: |
+        Update the localized attributes configuration of an index.
+
+        > info
+        > If the provided index does not exist, it will be created.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/localizedAttributes'
+            examples: {}
+        description: ''
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_settingsUpdate'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/Content-Type'
+    delete:
+      operationId: indexes.settings.localizedAttributes.reset
+      summary: Reset localized attributes settings to the default configuration
+      description: |
+        Reset the localized attributes settings of an index to its default configuration.
       tags:
         - Settings
       security:
