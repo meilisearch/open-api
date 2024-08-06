@@ -803,6 +803,24 @@ components:
               type: integer
               default: 9
               nullable: false
+    localizedAttributes:
+      type: object
+      description: Customize the language of your index.
+      properties:
+        locales:
+          description: Define the languages used in the attributes.
+          type: array
+          items:
+            type: string
+          default: []
+          nullable: false
+        attributePatterns:
+          description: Define the attributes affected by the locales.
+          type: array
+          items:
+            type: string
+          default: []
+          nullable: false
     pagination:
       type: object
       description: Customize pagination settings
@@ -999,6 +1017,13 @@ components:
           in: query
           description: Defines which `searchableAttributes` the query will search on.
           default: '["*"]'
+        locales:
+          type: array
+          description: Define the languages used in the query
+          items:
+            type: string
+          examples: ["fra", "ita"]
+          default: []
         distinctAttribute:
           type: string
           in: query
@@ -2877,6 +2902,8 @@ paths:
                     $ref: '#/components/schemas/sortableAttributes'
                   typoTolerance:
                     $ref: '#/components/schemas/typoTolerance'
+                  localizedAttributes:
+                    $ref: '#/components/schemas/localizedAttributes'
                   pagination:
                     $ref: '#/components/schemas/pagination'
                   faceting:
@@ -2893,6 +2920,7 @@ paths:
                   - filterableAttributes
                   - sortableAttributes
                   - typoTolerance
+                  - localizedAttributes
                   - pagination
                   - faceting
               examples:
@@ -2946,6 +2974,9 @@ paths:
                       minWordSizeForTypos:
                         oneTypo: 4
                         twoTypos: 8
+                    localizedAttributes:
+                      locales: ["ita", "fra"]
+                      attributePatterns: ["latin.*"]
                     pagination:
                       maxTotalHits: 1000
                     faceting:
