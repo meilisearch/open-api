@@ -343,6 +343,19 @@ components:
           properties:
             '':
               $ref: '#/components/schemas/rankingScoreDetails'
+        _federation:
+          type: object
+          description: Only present if running a multi-search query with the federation enabled.
+          properties:
+            indexUid:
+              type: string
+              description: The name of the index that contains the document
+            queriesPosition:
+              type: integer
+              description: index of the query in the queries array that caused this document to appear in the hits at this rank index of origin of this document
+            weightedRankingScore:
+              type: number
+              description: equal to the product of the _rankingScore of the hit and the weight of the query of origin.
         attribute:
           type:
             - string
@@ -4111,6 +4124,9 @@ paths:
         Make multiple search queries in a single HTTP request.
 
         The queries can span different indexes or lookup the results of different filters on the same index. Each query has its own results set.
+
+        When the federation property is present and not null, the multi-search returns a single search result object, whose list of hits is built by merging the hits coming from all the queries, in descending ranking score order.
+        If the federation property is missing or null, then the multi-search returns a list of search result objects, with each search result item from the list corresponding to a search query in the request.
       tags:
         - Search
       security:
@@ -4123,6 +4139,22 @@ paths:
               type: object
               additionalProperties: false
               properties:
+                federation:
+                  type: object
+                  description: |
+                    When present and not null, the multi-search returns a single search result object, whose list of hits is built by merging the hits coming from all the queries, in descending ranking score order.
+                    If missing or null, then the multi-search returns a list of search result objects, with each search result item from the list corresponding to a search query in the request.
+                  properties:
+                    offset:
+                      type: integer
+                      description: Number of documents skipped.
+                      default: 0
+                      nullable: false
+                    limit:
+                      type: integer
+                      description: Number of returned documents.
+                      default: 20
+                      nullable: false
                 queries:
                   type: array
                   description: Array of the search queries to be performed.
@@ -4134,6 +4166,15 @@ paths:
                         type: string
                         description: The unique identifier of the index to be searched.
                       $ref: '#/components/schemas/searchQuery/properties'
+                      federationOptions:
+                        type: object
+                        description: Customize the behavior of this query in the federation.
+                        properties:
+                          weight:
+                            description: a factor for the scores of each hit coming from this query. Must be positive (>=0). If < 1.0, the hits from this query are less likely to appear in the results. If > 1.0, the hits from this query are more likely to appear in the results.
+                            type: number
+                            default: 1.0
+                            nullable: false
                     examples:
                       Example:
                         value:
@@ -4144,7 +4185,7 @@ paths:
               required:
                 - queries
             examples:
-              Example:
+              Example without federation:
                 queries:
                   - indexUid: movies
                     q: Harry
@@ -4164,24 +4205,51 @@ paths:
                       - overview
                     showMatchesPosition: true
                     matchingStrategy: all
+              Example with federation:
+                federation:
+                  limit: 20
+                  offset: 40
+                queries:
+                  - indexUid: movies
+                    q: Harry
+                    filter: (genres = Horror AND genres = Mystery) OR release_date > 523242000
+                    facets:
+                      - genres
+                      - author
+                    attributesToRetrieve:
+                      - title
+                      - overview
+                    attributesToCrop:
+                      - overview
+                    cropLength: 20
+                    attributesToHighlight:
+                      - overview
+                    showMatchesPosition: true
+                    matchingStrategy: all
+                  - indexUid: comics
+                    q: Batman
+                    federationOptions:
+                      weight: 2.0
       responses:
         '200':
           description: Ok
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        indexUid:
-                          type: string
-                          description: The unique identifier of the searched index.
-                        $ref: '#/components/schemas/searchResponse/properties'
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            indexUid:
+                              type: string
+                              description: The unique identifier of the searched index.
+                            $ref: '#/components/schemas/searchResponse/properties'
+                  - $ref: '#/components/schemas/searchResponse'
               examples:
                 Example:
                   results:
