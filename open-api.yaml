@@ -1497,6 +1497,15 @@ components:
         example: 5
         default: 10
       description: Sets the total number of words to keep around the matched part of an attribute specified in the `attributesToCrop` parameter.
+    locales:
+      name: locales
+      in: query
+      required: false
+      schema:
+        type: array
+        example: ["fra"]
+        default: []
+      description: Sets the languages used in your query
     distinctAttribute:
       name: distinctAttribute
       in: query
@@ -2617,6 +2626,7 @@ paths:
         - $ref: '#/components/parameters/attributesToCrop'
         - $ref: '#/components/parameters/cropMarker'
         - $ref: '#/components/parameters/cropLength'
+        - $ref: '#/components/parameters/locales'
         - $ref: '#/components/parameters/facets'
         - $ref: '#/components/parameters/filter'
         - $ref: '#/components/parameters/offset'
