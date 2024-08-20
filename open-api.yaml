@@ -810,23 +810,25 @@ components:
               default: 9
               nullable: false
     localizedAttributes:
-      type: object
+      type: array
       description: Customize the language of your index.
-      properties:
-        locales:
-          description: Define the languages used in the attributes.
-          type: array
-          items:
-            type: string
-          default: []
-          nullable: false
-        attributePatterns:
-          description: Define the attributes affected by the locales.
-          type: array
-          items:
-            type: string
-          default: []
-          nullable: false
+      items:
+        type: object
+        properties:
+          locales:
+            description: Define the languages used in the attributes.
+            type: array
+            items:
+              type: string
+            default: []
+            nullable: false
+          attributePatterns:
+            description: Define the attributes affected by the locales.
+            type: array
+            items:
+              type: string
+            default: []
+            nullable: false
     pagination:
       type: object
       description: Customize pagination settings
