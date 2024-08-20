@@ -343,6 +343,19 @@ components:
           properties:
             '':
               $ref: '#/components/schemas/rankingScoreDetails'
+        _federation:
+          type: object
+          description: Only present if running a multi-search query with the federation enabled.
+          properties:
+            indexUid:
+              type: string
+              description: The name of the index that contains the document
+            queriesPosition:
+              type: integer
+              description: index of the query in the queries array that caused this document to appear in the hits at this rank index of origin of this document
+            weightedRankingScore:
+              type: number
+              description: equal to the product of the _rankingScore of the hit and the weight of the query of origin.
         attribute:
           type:
             - string
@@ -609,6 +622,12 @@ components:
             originalFilter:
               type: string
               description: Original filter query for taskCancelation or taskDeletion tasks.
+            context:
+              type: object
+              description: The variables used to run this query
+            function:
+              type: string
+              description: The string used to edit the documents
         error:
           description: Error object containing error details and context when a task has a failed status.
           $ref: '#/components/schemas/error'
@@ -790,6 +809,26 @@ components:
               type: integer
               default: 9
               nullable: false
+    localizedAttributes:
+      type: array
+      description: Customize the language of your index.
+      items:
+        type: object
+        properties:
+          locales:
+            description: Define the languages used in the attributes.
+            type: array
+            items:
+              type: string
+            default: []
+            nullable: false
+          attributePatterns:
+            description: Define the attributes affected by the locales.
+            type: array
+            items:
+              type: string
+            default: []
+            nullable: false
     pagination:
       type: object
       description: Customize pagination settings
@@ -986,6 +1025,13 @@ components:
           in: query
           description: Defines which `searchableAttributes` the query will search on.
           default: '["*"]'
+        locales:
+          type: array
+          description: Define the languages used in the query
+          items:
+            type: string
+          examples: ["fra", "ita"]
+          default: []
         distinctAttribute:
           type: string
           in: query
@@ -1453,6 +1499,15 @@ components:
         example: 5
         default: 10
       description: Sets the total number of words to keep around the matched part of an attribute specified in the `attributesToCrop` parameter.
+    locales:
+      name: locales
+      in: query
+      required: false
+      schema:
+        type: array
+        example: ["fra"]
+        default: []
+      description: Sets the languages used in your query
     distinctAttribute:
       name: distinctAttribute
       in: query
@@ -1660,6 +1715,14 @@ components:
         indexUid: movies
         status: enqueued
         type: documentAdditionOrUpdate
+        enqueuedAt: '2021-01-01T09:39:00.000000Z'
+    202_editDocumentsByFunction:
+      summary: 202 Accepted editDocumentsByFunction response example
+      value:
+        taskUid: 0
+        indexUid: movies
+        status: enqueued
+        type: documentEdition
         enqueuedAt: '2021-01-01T09:39:00.000000Z'
     202_documentDeletion:
       summary: 202 Accepted documentDeletion response example
@@ -2264,6 +2327,61 @@ paths:
           description: Not Found
     parameters:
       - $ref: '#/components/parameters/indexUid'
+  '/indexes/{indexUid}/documents/edit':
+    patch:
+      operationId: indexes.documents.edit
+      summary: (EXPERIMENTAL FEATURE) Edit documents by function
+      description: |
+        You can edit documents by executing a Rhai function on all the documents of your database or a subset of them that you can select by a Meilisearch filter.
+        See https://github.com/orgs/meilisearch/discussions/762
+      tags:
+        - Documents
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: string
+                  description: Select the documents you wants to apply the function on.
+                function:
+                  type: string
+                  description: The rhai function you want to apply to your documents.
+                context:
+                  type: object
+                  description: The variable you want to use in your function
+            examples:
+              Example:
+                value:
+                  filter: "_geo NOT EXISTS"
+                  function: "doc = ()"
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_editDocumentsByFunction'
+        '401':
+          $ref: '#/components/responses/401'
+        '413':
+          $ref: '#/components/responses/413'
+      parameters:
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - application/json
+          description: Payload content-type
   '/indexes/{indexUid}/documents/fetch':
     post:
       operationId: indexes.documents.fetch
@@ -2510,6 +2628,7 @@ paths:
         - $ref: '#/components/parameters/attributesToCrop'
         - $ref: '#/components/parameters/cropMarker'
         - $ref: '#/components/parameters/cropLength'
+        - $ref: '#/components/parameters/locales'
         - $ref: '#/components/parameters/facets'
         - $ref: '#/components/parameters/filter'
         - $ref: '#/components/parameters/offset'
@@ -2864,6 +2983,8 @@ paths:
                     $ref: '#/components/schemas/sortableAttributes'
                   typoTolerance:
                     $ref: '#/components/schemas/typoTolerance'
+                  localizedAttributes:
+                    $ref: '#/components/schemas/localizedAttributes'
                   pagination:
                     $ref: '#/components/schemas/pagination'
                   faceting:
@@ -2880,6 +3001,7 @@ paths:
                   - filterableAttributes
                   - sortableAttributes
                   - typoTolerance
+                  - localizedAttributes
                   - pagination
                   - faceting
               examples:
@@ -2933,6 +3055,9 @@ paths:
                       minWordSizeForTypos:
                         oneTypo: 4
                         twoTypos: 8
+                    localizedAttributes:
+                      locales: ["ita", "fra"]
+                      attributePatterns: ["latin.*"]
                     pagination:
                       maxTotalHits: 1000
                     faceting:
@@ -2982,6 +3107,8 @@ paths:
                   $ref: '#/components/schemas/filterableAttributes'
                 sortableAttributes:
                   $ref: '#/components/schemas/sortableAttributes'
+                localizedAttributes:
+                  $ref: '#/components/schemas/localizedAttributes'
                 typoTolerance:
                   $ref: '#/components/schemas/typoTolerance'
                 pagination:
@@ -3410,6 +3537,88 @@ paths:
         ```
 
         To remove all ranking rules, which is not recommended in any case, you would send an empty array to the add or replace ranking rules route.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_settingsUpdate'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    parameters:
+      - $ref: '#/components/parameters/indexUid'
+  '/indexes/{indexUid}/settings/localized-attributes':
+    get:
+      operationId: indexes.settings.localizedAttributes.get
+      summary: Get the localized attributes configuration
+      description: |
+        Get the localized attributes configuration of an index.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/localizedAttributes'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+    put:
+      operationId: indexes.settings.localizedAttributes.update
+      summary: Update localized attributes settings
+      description: |
+        Update the localized attributes configuration of an index.
+
+        > info
+        > If the provided index does not exist, it will be created.
+      tags:
+        - Settings
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/localizedAttributes'
+            examples: {}
+        description: ''
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/202'
+              examples:
+                '202':
+                  $ref: '#/components/examples/202_settingsUpdate'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/Content-Type'
+    delete:
+      operationId: indexes.settings.localizedAttributes.reset
+      summary: Reset localized attributes settings to the default configuration
+      description: |
+        Reset the localized attributes settings of an index to its default configuration.
       tags:
         - Settings
       security:
@@ -4111,6 +4320,9 @@ paths:
         Make multiple search queries in a single HTTP request.
 
         The queries can span different indexes or lookup the results of different filters on the same index. Each query has its own results set.
+
+        When the federation property is present and not null, the multi-search returns a single search result object, whose list of hits is built by merging the hits coming from all the queries, in descending ranking score order.
+        If the federation property is missing or null, then the multi-search returns a list of search result objects, with each search result item from the list corresponding to a search query in the request.
       tags:
         - Search
       security:
@@ -4123,6 +4335,22 @@ paths:
               type: object
               additionalProperties: false
               properties:
+                federation:
+                  type: object
+                  description: |
+                    When present and not null, the multi-search returns a single search result object, whose list of hits is built by merging the hits coming from all the queries, in descending ranking score order.
+                    If missing or null, then the multi-search returns a list of search result objects, with each search result item from the list corresponding to a search query in the request.
+                  properties:
+                    offset:
+                      type: integer
+                      description: Number of documents skipped.
+                      default: 0
+                      nullable: false
+                    limit:
+                      type: integer
+                      description: Number of returned documents.
+                      default: 20
+                      nullable: false
                 queries:
                   type: array
                   description: Array of the search queries to be performed.
@@ -4134,6 +4362,15 @@ paths:
                         type: string
                         description: The unique identifier of the index to be searched.
                       $ref: '#/components/schemas/searchQuery/properties'
+                      federationOptions:
+                        type: object
+                        description: Customize the behavior of this query in the federation.
+                        properties:
+                          weight:
+                            description: a factor for the scores of each hit coming from this query. Must be positive (>=0). If < 1.0, the hits from this query are less likely to appear in the results. If > 1.0, the hits from this query are more likely to appear in the results.
+                            type: number
+                            default: 1.0
+                            nullable: false
                     examples:
                       Example:
                         value:
@@ -4144,7 +4381,7 @@ paths:
               required:
                 - queries
             examples:
-              Example:
+              Example without federation:
                 queries:
                   - indexUid: movies
                     q: Harry
@@ -4164,24 +4401,51 @@ paths:
                       - overview
                     showMatchesPosition: true
                     matchingStrategy: all
+              Example with federation:
+                federation:
+                  limit: 20
+                  offset: 40
+                queries:
+                  - indexUid: movies
+                    q: Harry
+                    filter: (genres = Horror AND genres = Mystery) OR release_date > 523242000
+                    facets:
+                      - genres
+                      - author
+                    attributesToRetrieve:
+                      - title
+                      - overview
+                    attributesToCrop:
+                      - overview
+                    cropLength: 20
+                    attributesToHighlight:
+                      - overview
+                    showMatchesPosition: true
+                    matchingStrategy: all
+                  - indexUid: comics
+                    q: Batman
+                    federationOptions:
+                      weight: 2.0
       responses:
         '200':
           description: Ok
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        indexUid:
-                          type: string
-                          description: The unique identifier of the searched index.
-                        $ref: '#/components/schemas/searchResponse/properties'
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            indexUid:
+                              type: string
+                              description: The unique identifier of the searched index.
+                            $ref: '#/components/schemas/searchResponse/properties'
+                  - $ref: '#/components/schemas/searchResponse'
               examples:
                 Example:
                   results:
