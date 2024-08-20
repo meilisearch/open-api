@@ -3576,7 +3576,7 @@ paths:
           $ref: '#/components/responses/401'
         '404':
           description: Not Found
-    patch:
+    put:
       operationId: indexes.settings.localizedAttributes.update
       summary: Update localized attributes settings
       description: |
