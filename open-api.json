@@ -11,7 +11,7 @@
       "name": "MIT",
       "identifier": "MIT"
     },
-    "version": "1.13.1"
+    "version": "1.14.0"
   },
   "servers": [
     {
@@ -476,7 +476,8 @@
                   "editDocumentsByFunction": false,
                   "containsFilter": false,
                   "network": false,
-                  "getTaskDocumentsRoute": false
+                  "getTaskDocumentsRoute": false,
+                  "compositeEmbedders": false
                 }
               }
             }
@@ -529,7 +530,8 @@
                   "editDocumentsByFunction": false,
                   "containsFilter": false,
                   "network": false,
-                  "getTaskDocumentsRoute": false
+                  "getTaskDocumentsRoute": false,
+                  "compositeEmbedders": false
                 }
               }
             }
@@ -1084,6 +1086,17 @@
             "required": false,
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           {
@@ -3934,9 +3947,8 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
-                  },
-                  "uniqueItems": true
+                    "$ref": "#/components/schemas/FilterableAttributesRule"
+                  }
                 },
                 "example": []
               }
@@ -3994,9 +4006,8 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "string"
-                },
-                "uniqueItems": true
+                  "$ref": "#/components/schemas/FilterableAttributesRule"
+                }
               }
             }
           },
@@ -4072,9 +4083,8 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "string"
-                },
-                "uniqueItems": true
+                  "$ref": "#/components/schemas/FilterableAttributesRule"
+                }
               }
             }
           },
@@ -7258,6 +7268,8 @@
                 },
                 "example": {
                   "numberOfDocuments": 10,
+                  "rawDocumentDbSize": 10,
+                  "avgDocumentSize": 10,
                   "numberOfEmbeddings": 10,
                   "numberOfEmbeddedDocuments": 10,
                   "isIndexing": true,
@@ -8189,6 +8201,9 @@
                   "indexes": {
                     "movies": {
                       "numberOfDocuments": 10,
+                      "rawDocumentDbSize": 100,
+                      "maxDocumentSize": 16,
+                      "avgDocumentSize": 10,
                       "isIndexing": true,
                       "fieldDistribution": {
                         "genre": 10,
@@ -9410,6 +9425,25 @@
           }
         }
       },
+      "AttributePatterns": {
+        "type": "object",
+        "required": [
+          "patterns"
+        ],
+        "properties": {
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "title",
+              "overview_*",
+              "release_date"
+            ]
+          }
+        }
+      },
       "BTreeMap": {
         "type": "object",
         "additionalProperties": {
@@ -9530,6 +9564,30 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "progressTrace": {
+            "type": "object",
+            "additionalProperties": {},
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "writeChannelCongestion": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {},
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "internalDatabaseSizes": {
+            "type": "object",
+            "additionalProperties": {},
+            "propertyNames": {
+              "type": "string"
+            }
           }
         }
       },
@@ -9614,6 +9672,21 @@
             "type": "boolean",
             "example": true
           },
+          "ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "cody",
+              "finn",
+              "brandy",
+              "gambit"
+            ]
+          },
           "filter": {}
         }
       },
@@ -9667,6 +9740,7 @@
           "invalid_vector_dimensions",
           "invalid_vectors_type",
           "invalid_document_id",
+          "invalid_document_ids",
           "invalid_document_limit",
           "invalid_document_offset",
           "invalid_search_embedder",
@@ -9707,6 +9781,7 @@
           "invalid_search_facets",
           "invalid_search_semantic_ratio",
           "invalid_search_locales",
+          "invalid_facet_search_exhaustive_facet_count",
           "invalid_facet_search_facet_name",
           "invalid_similar_id",
           "invalid_search_filter",
@@ -10106,7 +10181,8 @@
           "huggingFace",
           "ollama",
           "userProvided",
-          "rest"
+          "rest",
+          "composite"
         ]
       },
       "ErrorType": {
@@ -10191,6 +10267,12 @@
             "items": {
               "$ref": "#/components/schemas/Locale"
             }
+          },
+          "exhaustive_facet_count": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         }
       },
@@ -10431,6 +10513,55 @@
           }
         }
       },
+      "FilterFeatures": {
+        "type": "object",
+        "properties": {
+          "equality": {
+            "type": "boolean"
+          },
+          "comparison": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilterableAttributesFeatures": {
+        "type": "object",
+        "properties": {
+          "facetSearch": {
+            "type": "boolean"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/FilterFeatures"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilterableAttributesPatterns": {
+        "type": "object",
+        "required": [
+          "attributePatterns"
+        ],
+        "properties": {
+          "attributePatterns": {
+            "$ref": "#/components/schemas/AttributePatterns"
+          },
+          "features": {
+            "$ref": "#/components/schemas/FilterableAttributesFeatures"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilterableAttributesRule": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/FilterableAttributesPatterns"
+          }
+        ]
+      },
       "GetLogs": {
         "type": "object",
         "required": [
@@ -10572,6 +10703,8 @@
         "description": "Stats of an `Index`, as known to the `stats` route.",
         "required": [
           "numberOfDocuments",
+          "rawDocumentDbSize",
+          "avgDocumentSize",
           "isIndexing",
           "fieldDistribution"
         ],
@@ -10580,6 +10713,18 @@
             "type": "integer",
             "format": "u-int64",
             "description": "Number of documents in the index",
+            "minimum": 0
+          },
+          "rawDocumentDbSize": {
+            "type": "integer",
+            "format": "u-int64",
+            "description": "Size of the documents database, in bytes.",
+            "minimum": 0
+          },
+          "avgDocumentSize": {
+            "type": "integer",
+            "format": "u-int64",
+            "description": "Average size of a document in the documents database.",
             "minimum": 0
           },
           "isIndexing": {
@@ -10930,10 +11075,7 @@
         ],
         "properties": {
           "attributePatterns": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "$ref": "#/components/schemas/AttributePatterns"
           },
           "locales": {
             "type": "array",
@@ -11019,6 +11161,14 @@
             "example": "ms-00"
           }
         }
+      },
+      "OverridePooling": {
+        "type": "string",
+        "enum": [
+          "useModel",
+          "forceCls",
+          "forceMean"
+        ]
       },
       "PaginationSettings": {
         "type": "object",
@@ -11458,6 +11608,12 @@
             ]
           },
           "getTaskDocumentsRoute": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "compositeEmbedders": {
             "type": [
               "boolean",
               "null"
@@ -11989,7 +12145,8 @@
                         "type": "null"
                       },
                       {
-                        "$ref": "#/components/schemas/EmbedderSource"
+                        "$ref": "#/components/schemas/EmbedderSource",
+                        "description": "The source used to provide the embeddings.\n\nWhich embedder parameters are available and mandatory is determined by the value of this setting.\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings.\n\n# Defaults\n\n- Defaults to `openAi`"
                       }
                     ]
                   },
@@ -11997,58 +12154,82 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "description": "The name of the model to use.\n\n# Mandatory\n\n- This parameter is mandatory for source `ollama`\n\n# Availability\n\n- This parameter is available for sources `openAi`, `huggingFace`, `ollama`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings.\n\n# Defaults\n\n- For source `openAi`, defaults to `text-embedding-3-small`\n- For source `huggingFace`, defaults to `BAAI/bge-base-en-v1.5`"
                   },
                   "revision": {
                     "type": [
                       "string",
                       "null"
+                    ],
+                    "description": "The revision (commit SHA1) of the model to use.\n\nIf unspecified, Meilisearch picks the latest revision of the model.\n\n# Availability\n\n- This parameter is available for source `huggingFace`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings\n\n# Defaults\n\n- When `model` is set to default, defaults to `617ca489d9e86b49b8167676d8220688b99db36e`\n- Otherwise, defaults to `null`"
+                  },
+                  "pooling": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/OverridePooling",
+                        "description": "The pooling method to use.\n\n# Availability\n\n- This parameter is available for source `huggingFace`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings\n\n# Defaults\n\n- Defaults to `useModel`\n\n# Compatibility Note\n\n- Embedders created before this parameter was available default to `forceMean` to preserve the existing behavior."
+                      }
                     ]
                   },
                   "apiKey": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "description": "The API key to pass to the remote embedder while making requests.\n\n# Availability\n\n- This parameter is available for source `openAi`, `ollama`, `rest`\n\n# 🔄 Reindexing\n\n- 🌱 Changing the value of this parameter never regenerates embeddings\n\n# Defaults\n\n- For source `openAi`, the key is read from `OPENAI_API_KEY`, then `MEILI_OPENAI_API_KEY`.\n- For other sources, no bearer token is sent if this parameter is not set.\n\n# Note\n\n- This setting is partially hidden when returned by the settings"
                   },
                   "dimensions": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "description": "The expected dimensions of the embeddings produced by this embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `userProvided`\n\n# Availability\n\n- This parameter is available for source `openAi`, `ollama`, `rest`, `userProvided`\n\n# 🔄 Reindexing\n\n- 🏗️ When the source is `openAi`, changing the value of this parameter always regenerates embeddings\n- 🌱 For other sources, changing the value of this parameter never regenerates embeddings\n\n# Defaults\n\n- For source `openAi`, the dimensions is the maximum allowed by the model.\n- For sources `ollama` and `rest`, the dimensions are inferred by embedding a sample text."
                   },
                   "binaryQuantized": {
                     "type": [
                       "boolean",
                       "null"
-                    ]
+                    ],
+                    "description": "Whether to binary quantize the embeddings of this embedder.\n\nBinary quantized embeddings are smaller than regular embeddings, which improves\ndisk usage and retrieval speed, at the cost of relevancy.\n\n# Availability\n\n- This parameter is available for all embedders\n\n# 🔄 Reindexing\n\n- 🏗️ When set to `true`, embeddings are not regenerated, but they are binary quantized, which takes time.\n\n# Defaults\n\n- Defaults to `false`\n\n# Note\n\nAs binary quantization is a destructive operation, it is not possible to disable again this setting after\nfirst enabling it. If you are unsure of whether the performance-relevancy tradeoff is right for you,\nwe recommend to use this parameter on a test index first."
                   },
                   "documentTemplate": {
                     "type": [
                       "boolean",
                       "null"
-                    ]
+                    ],
+                    "description": "A liquid template used to render documents to a text that can be embedded.\n\nMeillisearch interpolates the template for each document and sends the resulting text to the embedder.\nThe embedder then generates document vectors based on this text.\n\n# Availability\n\n- This parameter is available for source `openAi`, `huggingFace`, `ollama` and `rest\n\n# 🔄 Reindexing\n\n- 🏗️ When modified, embeddings are regenerated for documents whose rendering through the template produces a different text."
                   },
                   "documentTemplateMaxBytes": {
                     "type": [
                       "integer",
                       "null"
                     ],
+                    "description": "Rendered texts are truncated to this size.\n\n# Availability\n\n- This parameter is available for source `openAi`, `huggingFace`, `ollama` and `rest`\n\n# 🔄 Reindexing\n\n- 🏗️ When increased, embeddings are regenerated for documents whose rendering through the template produces a different text.\n- 🌱 When decreased, embeddings are never regenerated\n\n# Default\n\n- Defaults to 400",
                     "minimum": 0
                   },
                   "url": {
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "description": "URL to reach the remote embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `rest`\n\n# Availability\n\n- This parameter is available for source `openAi`, `ollama` and `rest`\n\n# 🔄 Reindexing\n\n- 🌱 When modified for source `openAi`, embeddings are never regenerated\n- 🏗️ When modified for sources `ollama` and `rest`, embeddings are always regenerated"
                   },
-                  "request": {},
-                  "response": {},
+                  "request": {
+                    "description": "Template request to send to the remote embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `rest`\n\n# Availability\n\n- This parameter is available for source `rest`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings"
+                  },
+                  "response": {
+                    "description": "Template response indicating how to find the embeddings in the response from the remote embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `rest`\n\n# Availability\n\n- This parameter is available for source `rest`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings"
+                  },
                   "headers": {
                     "type": [
                       "object",
                       "null"
                     ],
+                    "description": "Additional headers to send to the remote embedder.\n\n# Availability\n\n- This parameter is available for source `rest`\n\n# 🔄 Reindexing\n\n- 🌱 Changing the value of this parameter never regenerates embeddings",
                     "additionalProperties": {
                       "type": "string"
                     },
@@ -12056,13 +12237,34 @@
                       "type": "string"
                     }
                   },
+                  "searchEmbedder": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SubEmbeddingSettings"
+                      }
+                    ]
+                  },
+                  "indexingEmbedder": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SubEmbeddingSettings"
+                      }
+                    ]
+                  },
                   "distribution": {
                     "oneOf": [
                       {
                         "type": "null"
                       },
                       {
-                        "$ref": "#/components/schemas/DistributionShift"
+                        "$ref": "#/components/schemas/DistributionShift",
+                        "description": "Affine transformation applied to the semantic score to make it more comparable to the ranking score.\n\n# Availability\n\n- This parameter is available for all embedders\n\n# 🔄 Reindexing\n\n- 🌱 Changing the value of this parameter never regenerates embeddings"
                       }
                     ]
                   }
@@ -12113,7 +12315,7 @@
               "null"
             ],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/FilterableAttributesRule"
             },
             "description": "Attributes to use for faceting and filtering. See [Filtering and Faceted Search](https://www.meilisearch.com/docs/learn/filtering_and_sorting/search_with_facet_filters).",
             "example": [
@@ -12376,7 +12578,7 @@
               "null"
             ],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/FilterableAttributesRule"
             },
             "description": "Attributes to use for faceting and filtering. See [Filtering and Faceted Search](https://www.meilisearch.com/docs/learn/filtering_and_sorting/search_with_facet_filters).",
             "example": [
@@ -12733,6 +12935,103 @@
           "canceled"
         ],
         "example": "processing"
+      },
+      "SubEmbeddingSettings": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EmbedderSource",
+                "description": "The source used to provide the embeddings.\n\nWhich embedder parameters are available and mandatory is determined by the value of this setting.\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings.\n\n# Defaults\n\n- Defaults to `openAi`"
+              }
+            ]
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The name of the model to use.\n\n# Mandatory\n\n- This parameter is mandatory for source `ollama`\n\n# Availability\n\n- This parameter is available for sources `openAi`, `huggingFace`, `ollama`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings.\n\n# Defaults\n\n- For source `openAi`, defaults to `text-embedding-3-small`\n- For source `huggingFace`, defaults to `BAAI/bge-base-en-v1.5`"
+          },
+          "revision": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The revision (commit SHA1) of the model to use.\n\nIf unspecified, Meilisearch picks the latest revision of the model.\n\n# Availability\n\n- This parameter is available for source `huggingFace`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings\n\n# Defaults\n\n- When `model` is set to default, defaults to `617ca489d9e86b49b8167676d8220688b99db36e`\n- Otherwise, defaults to `null`"
+          },
+          "pooling": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverridePooling",
+                "description": "The pooling method to use.\n\n# Availability\n\n- This parameter is available for source `huggingFace`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings\n\n# Defaults\n\n- Defaults to `useModel`\n\n# Compatibility Note\n\n- Embedders created before this parameter was available default to `forceMean` to preserve the existing behavior."
+              }
+            ]
+          },
+          "apiKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The API key to pass to the remote embedder while making requests.\n\n# Availability\n\n- This parameter is available for source `openAi`, `ollama`, `rest`\n\n# 🔄 Reindexing\n\n- 🌱 Changing the value of this parameter never regenerates embeddings\n\n# Defaults\n\n- For source `openAi`, the key is read from `OPENAI_API_KEY`, then `MEILI_OPENAI_API_KEY`.\n- For other sources, no bearer token is sent if this parameter is not set.\n\n# Note\n\n- This setting is partially hidden when returned by the settings"
+          },
+          "dimensions": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The expected dimensions of the embeddings produced by this embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `userProvided`\n\n# Availability\n\n- This parameter is available for source `openAi`, `ollama`, `rest`, `userProvided`\n\n# 🔄 Reindexing\n\n- 🏗️ When the source is `openAi`, changing the value of this parameter always regenerates embeddings\n- 🌱 For other sources, changing the value of this parameter never regenerates embeddings\n\n# Defaults\n\n- For source `openAi`, the dimensions is the maximum allowed by the model.\n- For sources `ollama` and `rest`, the dimensions are inferred by embedding a sample text."
+          },
+          "documentTemplate": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "A liquid template used to render documents to a text that can be embedded.\n\nMeillisearch interpolates the template for each document and sends the resulting text to the embedder.\nThe embedder then generates document vectors based on this text.\n\n# Availability\n\n- This parameter is available for source `openAi`, `huggingFace`, `ollama` and `rest\n\n# 🔄 Reindexing\n\n- 🏗️ When modified, embeddings are regenerated for documents whose rendering through the template produces a different text."
+          },
+          "documentTemplateMaxBytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Rendered texts are truncated to this size.\n\n# Availability\n\n- This parameter is available for source `openAi`, `huggingFace`, `ollama` and `rest`\n\n# 🔄 Reindexing\n\n- 🏗️ When increased, embeddings are regenerated for documents whose rendering through the template produces a different text.\n- 🌱 When decreased, embeddings are never regenerated\n\n# Default\n\n- Defaults to 400",
+            "minimum": 0
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL to reach the remote embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `rest`\n\n# Availability\n\n- This parameter is available for source `openAi`, `ollama` and `rest`\n\n# 🔄 Reindexing\n\n- 🌱 When modified for source `openAi`, embeddings are never regenerated\n- 🏗️ When modified for sources `ollama` and `rest`, embeddings are always regenerated"
+          },
+          "request": {
+            "description": "Template request to send to the remote embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `rest`\n\n# Availability\n\n- This parameter is available for source `rest`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings"
+          },
+          "response": {
+            "description": "Template response indicating how to find the embeddings in the response from the remote embedder.\n\n# Mandatory\n\n- This parameter is mandatory for source `rest`\n\n# Availability\n\n- This parameter is available for source `rest`\n\n# 🔄 Reindexing\n\n- 🏗️ Changing the value of this parameter always regenerates embeddings"
+          },
+          "headers": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Additional headers to send to the remote embedder.\n\n# Availability\n\n- This parameter is available for source `rest`\n\n# 🔄 Reindexing\n\n- 🌱 Changing the value of this parameter never regenerates embeddings",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "SummarizedTaskView": {
         "type": "object",
