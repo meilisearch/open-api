@@ -11,7 +11,7 @@
       "name": "MIT",
       "identifier": "MIT"
     },
-    "version": "1.14.0"
+    "version": "1.15.2"
   },
   "servers": [
     {
@@ -477,7 +477,8 @@
                   "containsFilter": false,
                   "network": false,
                   "getTaskDocumentsRoute": false,
-                  "compositeEmbedders": false
+                  "compositeEmbedders": false,
+                  "chatCompletions": false
                 }
               }
             }
@@ -531,7 +532,8 @@
                   "containsFilter": false,
                   "network": false,
                   "getTaskDocumentsRoute": false,
-                  "compositeEmbedders": false
+                  "compositeEmbedders": false,
+                  "chatCompletions": false
                 }
               }
             }
@@ -2581,6 +2583,214 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Settings_Unchecked"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Task successfully enqueued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizedTaskView"
+                },
+                "example": {
+                  "taskUid": 147,
+                  "indexUid": "movies",
+                  "status": "enqueued",
+                  "type": "settingsUpdate",
+                  "enqueuedAt": "2024-08-08T17:05:55.791772Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The authorization header is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseError"
+                },
+                "example": {
+                  "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                  "code": "missing_authorization_header",
+                  "type": "auth",
+                  "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [
+              "settings.update",
+              "settings.*",
+              "*"
+            ]
+          }
+        ]
+      }
+    },
+    "/indexes/{indexUid}/settings/chat": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get chat",
+        "description": "Get an user defined chat",
+        "operationId": "getchat",
+        "parameters": [
+          {
+            "name": "indexUid",
+            "in": "path",
+            "description": "Index Unique Identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "movies"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "chat is returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSettings"
+                },
+                "example": {}
+              }
+            }
+          },
+          "401": {
+            "description": "The authorization header is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseError"
+                },
+                "example": {
+                  "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                  "code": "missing_authorization_header",
+                  "type": "auth",
+                  "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [
+              "settings.get",
+              "settings.*",
+              "*"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update chat",
+        "description": "Update an index's user defined chat",
+        "operationId": "putchat",
+        "parameters": [
+          {
+            "name": "indexUid",
+            "in": "path",
+            "description": "Index Unique Identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "movies"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Task successfully enqueued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizedTaskView"
+                },
+                "example": {
+                  "taskUid": 147,
+                  "indexUid": "movies",
+                  "status": "enqueued",
+                  "type": "settingsUpdate",
+                  "enqueuedAt": "2024-08-08T17:05:55.791772Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The authorization header is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseError"
+                },
+                "example": {
+                  "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                  "code": "missing_authorization_header",
+                  "type": "auth",
+                  "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [
+              "settings.update",
+              "settings.*",
+              "*"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Reset chat",
+        "description": "Reset an index's chat to its default value",
+        "operationId": "deletechat",
+        "parameters": [
+          {
+            "name": "indexUid",
+            "in": "path",
+            "description": "Index Unique Identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "movies"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSettings"
               }
             }
           },
@@ -9333,7 +9543,14 @@
           "experimental.get",
           "experimental.update",
           "network.get",
-          "network.update"
+          "network.update",
+          "chatCompletions",
+          "chats.*",
+          "chats.get",
+          "chats.delete",
+          "chatsSettings.*",
+          "chatsSettings.get",
+          "chatsSettings.update"
         ]
       },
       "AllBatches": {
@@ -9634,6 +9851,9 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "batchStrategy": {
+            "type": "string"
           }
         }
       },
@@ -9689,6 +9909,111 @@
           },
           "filter": {}
         }
+      },
+      "ChatSearchParams": {
+        "type": "object",
+        "properties": {
+          "hybrid": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HybridQuery"
+              }
+            ]
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "sort": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "distinct": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "matchingStrategy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MatchingStrategy"
+              }
+            ]
+          },
+          "attributesToSearchOn": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "rankingScoreThreshold": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RankingScoreThreshold"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatSettings": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentTemplate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A liquid template used to render documents to a text that can be embedded.\n\nMeillisearch interpolates the template for each document and sends the resulting text to the embedder.\nThe embedder then generates document vectors based on this text."
+          },
+          "documentTemplateMaxBytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Rendered texts are truncated to this size. Defaults to 400.",
+            "minimum": 0
+          },
+          "searchParameters": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChatSearchParams",
+                "description": "The search parameters to use for the LLM."
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "Code": {
         "type": "string",
@@ -9884,7 +10209,26 @@
           "not_found_similar_id",
           "invalid_document_edition_context",
           "invalid_document_edition_function_filter",
-          "edit_documents_by_function_error"
+          "edit_documents_by_function_error",
+          "invalid_settings_index_chat",
+          "unimplemented_external_function_calling",
+          "unimplemented_non_streaming_chat_completions",
+          "unimplemented_multi_choice_chat_completions",
+          "chat_not_found",
+          "invalid_chat_setting_document_template",
+          "invalid_chat_completion_org_id",
+          "invalid_chat_completion_project_id",
+          "invalid_chat_completion_api_version",
+          "invalid_chat_completion_deployment_id",
+          "invalid_chat_completion_source",
+          "invalid_chat_completion_base_api",
+          "invalid_chat_completion_api_key",
+          "invalid_chat_completion_prompts",
+          "invalid_chat_completion_system_prompt",
+          "invalid_chat_completion_search_description_prompt",
+          "invalid_chat_completion_search_query_param_prompt",
+          "invalid_chat_completion_search_index_uid_param_prompt",
+          "invalid_chat_completion_pre_query_prompt"
         ]
       },
       "ComputedFacets": {
@@ -9967,7 +10311,7 @@
             "items": {
               "type": "string"
             },
-            "description": "A list of accesible indexes permitted for the key. `[\"*\"]` for all indexes. The `*` character can be used as a wildcard when located at the last position. e.g. `products_*` to allow access to all indexes whose names start with `products_`.",
+            "description": "A list of accessible indexes permitted for the key. `[\"*\"]` for all indexes. The `*` character can be used as a wildcard when located at the last position. e.g. `products_*` to allow access to all indexes whose names start with `products_`.",
             "example": [
               "products"
             ]
@@ -11095,6 +11439,7 @@
       },
       "MatchingStrategy": {
         "type": "string",
+        "description": "This is unfortunately a duplication of the struct in <meilisearch/src/search/mod.rs>.\nThe reason why it is duplicated is because milli cannot depend on meilisearch. It would be cyclic imports.",
         "enum": [
           "last",
           "all",
@@ -11614,6 +11959,12 @@
             ]
           },
           "compositeEmbedders": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "chatCompletions": {
             "type": [
               "boolean",
               "null"
@@ -12534,6 +12885,17 @@
                 "$ref": "#/components/schemas/PrefixSearchSettings"
               }
             ]
+          },
+          "chat": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChatSettings",
+                "description": "Customize the chat prompting."
+              }
+            ]
           }
         },
         "additionalProperties": false
@@ -12795,6 +13157,17 @@
               },
               {
                 "$ref": "#/components/schemas/PrefixSearchSettings"
+              }
+            ]
+          },
+          "chat": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChatSettings",
+                "description": "Customize the chat prompting."
               }
             ]
           }
@@ -13226,6 +13599,13 @@
               "url"
             ],
             "uniqueItems": true
+          },
+          "disableOnNumbers": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "example": true
           }
         },
         "additionalProperties": false
